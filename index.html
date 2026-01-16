@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REGNATOR MYTHOLOGICAL</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:#000;color:#fff;font-family:Arial,sans-serif;padding-bottom:80px;}
+  @keyframes neon{0%,100%{text-shadow:0 0 10px #ff00ff,0 0 20px #ff00ff,0 0 30px #ff00ff;}50%{text-shadow:0 0 20px #00ffff,0 0 30px #00ffff,0 0 40px #00ffff;}}
+  .neon-text{animation:neon 2s ease-in-out infinite;}
+  .page{display:none;}
+  .center{display:flex;flex-direction:center;align-items:center;justify-content:center;height:100vh;}
+  .btn{background:transparent;border:2px solid #f006;color:#f006;padding:.8rem 1.5rem;cursor:pointer;transition:all .3s;}
+  .btn:hover{background:rgba(255,255,255,.1);}
+  .btn-del{border-color:#f00;color:#f00;margin-left:.5rem;}
+  .btn-add{border-color:#0f0;color:#0f0;}
+  .btn-save{position:fixed;top:2rem;right:2rem;border-color:#0f0;color:#0f0;z-index:100;}
+  .section{border:2px solid #ff0;padding:1rem;border-radius:5px;background:rgba(255,255,255,.05);margin-bottom:1rem;}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:.5rem;background:rgba(255,255,255,.1);border-radius:3px;margin-bottom:.5rem;}
+  .item span{flex:1;cursor:pointer;}
+  .sections{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;}
+  .form-group{margin-bottom:1rem;}
+  .form-group input,.form-group select,.form-group textarea{width:100%;padding:.5rem;background:rgba(255,255,255,.1);border:2px solid #fff;color:#fff;border-radius:3px;}
+  .search-bar{width:100%;max-width:600px;margin:0 auto 2rem;padding:1rem;background:rgba(255,255,255,.1);border:2px solid #fff;color:#fff;border-radius:5px;}
+  .page-header{text-align:center;margin-bottom:2rem;}
+  .bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);border-top:2px solid #fff;display:flex;justify-content:space-around;padding:1rem;z-index:1000;}
+  .nav-item{padding:.5rem 1rem;cursor:pointer;border:2px solid transparent;transition:all .3s;}
+  .nav-item:hover,.nav-item.active{border-color:#fff;background:rgba(255,255,255,.1);}
+</style>
+</head>
+<body>
+
+<!-- 主页面 -->
+<div id="main-page" class="page center" style="display:flex;">
+  <div style="text-align:center;">
+    <h1 class="neon-text" style="font-size:4rem;margin-bottom:2rem;">REGNATOR MYTHOLOGICAL</h1>
+    <button class="btn" onclick="showLoginPage()">点击访问</button>
+  </div>
+</div>
+
+<!-- 登录页面 -->
+<div id="login-page" class="page">
+  <div class="section" style="max-width:400px;margin:4rem auto;">
+    <h2>Visitor登录</h2>
+    <button class="btn btn-add" style="width:100%;" onclick="loginAsVisitor()">Visitor登录</button>
+  </div>
+  <div class="section" style="max-width:400px;margin:2rem auto;">
+    <h2>Administrator登录</h2>
+    <input type="text" id="admin-username" placeholder="账户" style="width:100%;margin-bottom:1rem;padding:.5rem;">
+    <input type="password" id="admin-password" placeholder="密码" style="width:100%;margin-bottom:1rem;padding:.5rem;">
+    <button class="btn btn-add" style="width:100%;" onclick="loginAsAdmin()">Administrator登录</button>
+  </div>
+</div>
+
+<!-- 目录页面 -->
+<div id="directory-page" class="page">
+  <div class="page-header"><h1 class="neon-text">TITAN DIRECTORY</h1></div>
+  <input type="text" class="search-bar" placeholder="输入关键词搜索..." onkeyup="searchTitans(this.value)">
+  <div class="sections" id="titan-sections"></div>
+</div>
+
+<!-- 黑盒页面 -->
+<div id="blackbox-page" class="page">
+  <div class="page-header"><h1 class="neon-text">TECHNICAL BLACKBOX</h1></div>
+  <div class="sections" id="blackbox-sections"></div>
+</div>
+
+<!-- 补丁页面 -->
+<div id="patch-page" class="page">
+  <div class="page-header"><h1 class="neon-text">SYSTEM PATCH</h1></div>
+  <div class="sections" id="patch-sections"></div>
+</div>
+
+<!-- 全局页面 -->
+<div id="global-page" class="page">
+  <div class="page-header"><h1 class="neon-text">GLOBAL FIREWALL</h1></div>
+  <textarea id="global-editor" style="width:100%;min-height:400px;padding:1rem;background:rgba(255,255,255,.1);border:2px solid #fff;color:#fff;"></textarea>
+  <button class="btn btn-save" onclick="saveGlobal()">保存</button>
+</div>
+
+<!-- 编辑页面 -->
+<div id="edit-page" class="page">
+  <button class="btn btn-save" onclick="saveTitan()">保存</button>
+  <button id="back-btn" class="btn" style="position:fixed;top:2rem;right:2rem;display:none;z-index:101;" onclick="backToDirectory()">返回</button>
+  <div class="edit-form" id="edit-form"></div>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav" id="bottom-nav" style="display:none;">
+  <div class="nav-item" onclick="showDirectory()">目录页面</div>
+  <div class="nav-item" onclick="showBlackbox()">技术黑盒</div>
+  <div class="nav-item" onclick="showPatch()">系统补丁</div>
+  <div class="nav-item" onclick="showGlobal()">全局设置</div>
+</div>
+
+<script>
+const HP_UNITS=["Unit","Ten","Hundred","Thousand","Ten Thousand","Hundred Thousand","Million","Ten Million","Hundred Million","Billion","Ten Billion","Hundred Billion","Trillion","Quadrillion","Quintillion","Sextillion","Septillion","Octillion","Nonillion","Decillion","Undecillion","Duodecillion","Tredecillion","Quattuordecillion","Quindecillion","Sexdecillion","Septendecillion","Octodecillion","Googol","Googolplex","Infinity (∞)"];
+const DAMAGE_REDUCTIONS=["0.0%","42.0%","44.0%","46.0%","48.0%","50.0%","80.0%","99.0%","100.0%"];
+const BODY_UNITS=["cm","m","km"];
+const ADVANTAGES=["Omniverse（宇宙）","Air field（空）","Land field（陆）","Ocean field（海）"];
+const BOOL_OPTS=[{v:"☑",c:"neon-green"},{v:"☒",c:"neon-red"},{v:"I don't know.",c:"neon-red neon-text"}];
+
+let currentUser=null,currentSection=null,currentIndex=null;
+let titanData={},blackboxData={},patchData={},globalData="";
+
+function init(){
+  const sTD=localStorage.getItem('titanData'),sBD=localStorage.getItem('blackboxData'),sPD=localStorage.getItem('patchData'),sGD=localStorage.getItem('globalData');
+  if(sTD)titanData=JSON.parse(sTD);else for(let i=0;i<=17;i++)titanData[`T${i}`]=[];
+  if(sBD)blackboxData=JSON.parse(sBD);else for(let i=0;i<=17;i++)blackboxData[`T${i}`]="";
+  if(sPD)patchData=JSON.parse(sPD);else for(let i=0;i<=17;i++)patchData[`T${i}`]="";
+  if(sGD)globalData=sGD;else globalData="";
+}
+function saveData(){
+  try {
+    localStorage.setItem('titanData',JSON.stringify(titanData));
+    localStorage.setItem('blackboxData',JSON.stringify(blackboxData));
+    localStorage.setItem('patchData',JSON.stringify(patchData));
+    localStorage.setItem('globalData',globalData);
+  } catch(e){
+    if(e.name==='QuotaExceededError'){
+      alert('内容超出浏览器限额！\n建议导出 JSON 备份，清理旧数据后再导入。');
+    } else {
+      alert('保存失败：'+e.message);
+    }
+  }
+}
+function showLoginPage(){
+  hideAll();
+  document.getElementById('login-page').style.display='block';
+  document.getElementById('bottom-nav').style.display='none';
+}
+function loginAsVisitor(){
+  currentUser='visitor';
+  document.getElementById('bottom-nav').style.display='flex';
+  showDirectory();
+}
+function loginAsAdmin(){
+  const u=document.getElementById('admin-username').value,p=document.getElementById('admin-password').value;
+  if(u==='D00M_Herobrine'&&p==='000.000.000'){
+    currentUser='admin';
+    document.getElementById('bottom-nav').style.display='flex';
+    showDirectory();
+  }else alert('账户或密码错误！');
+}
+function showDirectory(){
+  hideAll();document.getElementById('directory-page').style.display='block';renderTitanSections();
+}
+function showBlackbox(){
+  hideAll();document.getElementById('blackbox-page').style.display='block';renderBlackboxSections();
+}
+function showPatch(){
+  hideAll();document.getElementById('patch-page').style.display='block';renderPatchSections();
+}
+function showGlobal(){
+  hideAll();document.getElementById('global-page').style.display='block';document.getElementById('global-editor').value=globalData;
+}
+function hideAll(){document.querySelectorAll('.page').forEach(p=>p.style.display='none');}
+function renderTitanSections(){
+  const c=document.getElementById('titan-sections');c.innerHTML='';
+  for(let i=0;i<=17;i++){
+    const div=document.createElement('div');div.className='section';
+    let items=titanData[`T${i}`].map((t,idx)=>`
+      <li class="item">
+        <span onclick="editTitan('T${i}',${idx})">${t.TitanName||'未命名'}</span>
+        ${currentUser==='admin'?`<button class="btn btn-del" onclick="delTitan('T${i}',${idx})">删除</button>`:''}
+      </li>`).join('');
+    div.innerHTML=`<h3 class="section-title">T${i}</h3><ul class="item-list">${items}</ul>
+      ${currentUser==='admin'?`<button class="btn btn-add" onclick="addTitan('T${i}')">增加</button>`:''}`;c.appendChild(div);
+  }
+}
+function renderBlackboxSections(){
+  const c=document.getElementById('blackbox-sections');c.innerHTML='';
+  for(let i=0;i<=17;i++){
+    const div=document.createElement('div');div.className='section';
+    div.innerHTML=`<h3 class="section-title">T${i}</h3><div class="item" style="white-space:pre-wrap;max-height:150px;overflow-y:auto;">${blackboxData[`T${i}`]||'暂无内容'}</div>
+      ${currentUser==='admin'?`<button class="btn btn-add" onclick="editBlackbox('T${i}')">编辑</button>`:''}`;c.appendChild(div);
+  }
+}
+function renderPatchSections(){
+  const c=document.getElementById('patch-sections');c.innerHTML='';
+  for(let i=0;i<=17;i++){
+    const div=document.createElement('div');div.className='section';
+    div.innerHTML=`<h3 class="section-title">T${i}</h3><div class="item" style="white-space:pre-wrap;max-height:150px;overflow-y:auto;">${patchData[`T${i}`]||'暂无内容'}</div>
+      ${currentUser==='admin'?`<button class="btn btn-add" onclick="editPatch('T${i}')">编辑</button>`:''}`;c.appendChild(div);
+  }
+}
+function addTitan(sec){
+  const name=prompt('Please enter Titan Name.');if(!name||name.length>65025)return;
+  titanData[sec].push({TitanName:name});saveData();renderTitanSections();
+}
+function delTitan(sec,idx){
+  if(!confirm('确定删除该泰坦？'))return;
+  titanData[sec].splice(idx,1);saveData();renderTitanSections();
+}
+function editBlackbox(sec){
+  const v=prompt('编辑黑盒内容：',blackboxData[sec]||'');if(v===null)return;
+  blackboxData[sec]=v;saveData();renderBlackboxSections();
+}
+function editPatch(sec){
+  const v=prompt('编辑补丁内容：',patchData[sec]||'');if(v===null)return;
+  patchData[sec]=v;saveData();renderPatchSections();
+}
+function editTitan(sec,idx){
+  currentSection=sec;currentIndex=idx;
+  const t=titanData[sec][idx];
+  hideAll();document.getElementById('edit-page').style.display='block';
+  const isReadOnly=currentUser==='visitor';
+  const f=document.getElementById('edit-form');
+  
+  f.innerHTML=`
+    <h2>${isReadOnly?'查看':'编辑'} ${t.TitanName||'未命名'}</h2>
+    <div class="form-group"><label>Titan Name</label><input id="TitanName" maxlength="65025" value="${t.TitanName||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Magnitude</label><select id="Magnitude" ${isReadOnly?'disabled':''}>${magnitudeOpts(t.Magnitude)}</select></div>
+    <div class="form-group"><label>HP数值</label><input id="HPValue" maxlength="65025" value="${t.HPValue||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>HP单位</label><select id="HPUnit" ${isReadOnly?'disabled':''}>${hpUnitOpts(t.HPUnit)}</select></div>
+    <div class="form-group"><label>Stage</label><input id="Stage" value="${t.Stage||''}" placeholder="双击禁用" ondblclick="this.value='☒'" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Attack数值</label><input id="AttackValue" maxlength="65025" value="${t.AttackValue||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Attack单位</label><select id="AttackUnit" ${isReadOnly?'disabled':''}>${hpUnitOpts(t.AttackUnit)}</select></div>
+    <div class="form-group"><label>HP/tick</label><input id="HPTick" value="${t.HPTick||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Damage Reduction %</label><select id="DamageReduction" ${isReadOnly?'disabled':''}>${dmgRedOpts(t.DamageReduction)}</select></div>
+    <div class="form-group"><label>Armor Value</label><input id="ArmorValue" maxlength="65025" value="${t.ArmorValue||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>TD/hit</label><input id="TD" maxlength="65025" value="${t.TD||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>D/hit</label><input id="D" maxlength="65025" value="${t.D||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Body Type数值</label><input id="BodyTypeValue" maxlength="65025" value="${t.BodyTypeValue||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Body Type单位</label><select id="BodyTypeUnit" ${isReadOnly?'disabled':''}>${bodyUnitOpts(t.BodyTypeUnit)}</select></div>
+    <div class="form-group"><label>践踏AoE</label><input id="StompAoE" maxlength="65025" value="${t.StompAoE||''}" ${isReadOnly?'disabled':''}></div>
+    <div class="form-group"><label>Action Advantage</label><select id="ActionAdvantage" ${isReadOnly?'disabled':''}>${advOpts(t.ActionAdvantage)}</select></div>
+    <div class="form-group"><label>Zusätzlicher Gewinn</label><textarea id="Zusatz" maxlength="65025" ${isReadOnly?'disabled':''}>${t.Zusatz||''}</textarea></div>
+    <div class="form-group"><label>Basic Skills</label><textarea id="BasicSkills" maxlength="65025" ${isReadOnly?'disabled':''}>${t.BasicSkills||''}</textarea></div>
+    <div class="form-group"><label>Ethnic Group</label><textarea id="EthnicGroup" maxlength="65025" ${isReadOnly?'disabled':''}>${t.EthnicGroup||''}</textarea></div>
+    <div class="form-group"><label>Priesthood</label><textarea id="Priesthood" maxlength="65025" ${isReadOnly?'disabled':''}>${t.Priesthood||''}</textarea></div>
+    <div class="form-group"><label>Divinity</label><textarea id="Divinity" maxlength="65025" ${isReadOnly?'disabled':''}>${t.Divinity||''}</textarea></div>
+    <div class="form-group"><label>Position and orientation</label><textarea id="Position" maxlength="65025" ${isReadOnly?'disabled':''}>${t.Position||''}</textarea></div>
+    <div class="form-group"><label>Do you have hatred for the players who create the mode</label><select id="Hatred" ${isReadOnly?'disabled':''}>${boolOpts(t.Hatred)}</select></div>
+    <div class="form-group"><label>Is it immune to built-in instruction operation?</label><select id="Immune" ${isReadOnly?'disabled':''}>${boolOpts(t.Immune)}</select></div>
+    <div class="form-group"><label>Num interficere potest lusorem in modo creationis/modo developmentis constitutum?</label><select id="KillDev" ${isReadOnly?'disabled':''}>${boolOpts(t.KillDev)}</select></div>
+    <div class="form-group"><label>Only special weapons and special plots in the module can cause damage to Titan creatures.</label><select id="SpecialDamage" ${isReadOnly?'disabled':''}>${boolOpts(t.SpecialDamage)}</select></div>
+  `;
+  
+  // 控制按钮显示
+  const saveBtn=document.querySelector('#edit-page .btn-save');
+  const backBtn=document.getElementById('back-btn');
+  if(saveBtn)saveBtn.style.display=isReadOnly?'none':'block';
+  if(backBtn)backBtn.style.display=isReadOnly?'block':'none';
+}
+function backToDirectory(){
+  hideAll();
+  document.getElementById('directory-page').style.display='block';
+}
+function magnitudeOpts(sel){
+  const arr=["!OnO.utside LordGod","!LordGod","!Lord God'Projection.","!Supreme Divinity","!Ancient Gods","!Omnipotentgod/God","!God Emperor","!Godofficial","!Administrator.","!The Gods","!Godmessenger.","!Ancient Beast","!Order","!Mythical Animals","!BOSS","!Elite Monster","!NPC/信徒"];
+  return arr.map(v=>`<option ${v===sel?'selected':''}>${v}</option>`).join('');
+}
+function hpUnitOpts(sel){
+  return HP_UNITS.map(v=>`<option ${v===sel?'selected':''}>${v}</option>`).join('');
+}
+function dmgRedOpts(sel){
+  return DAMAGE_REDUCTIONS.map(v=>`<option ${v===sel?'selected':''}>${v}</option>`).join('');
+}
+function bodyUnitOpts(sel){
+  return BODY_UNITS.map(v=>`<option ${v===sel?'selected':''}>${v}</option>`).join('');
+}
+function advOpts(sel){
+  return ADVANTAGES.map(v=>`<option ${v===sel?'selected':''}>${v}</option>`).join('');
+}
+function boolOpts(sel){
+  return BOOL_OPTS.map(o=>`<option class="${o.c}" ${o.v===sel?'selected':''}>${o.v}</option>`).join('');
+}
+function saveTitan(){
+  const sec=currentSection,idx=currentIndex;
+  const fields={
+    TitanName              : document.getElementById('TitanName')?.value || '',
+    Magnitude              : document.getElementById('Magnitude')?.value || '',
+    HPValue                : document.getElementById('HPValue')?.value || '',
+    HPUnit                 : document.getElementById('HPUnit')?.value || '',
+    Stage                  : document.getElementById('Stage')?.value || '',
+    AttackValue            : document.getElementById('AttackValue')?.value || '',
+    AttackUnit             : document.getElementById('AttackUnit')?.value || '',
+    HPTick                 : document.getElementById('HPTick')?.value || '',
+    DamageReduction        : document.getElementById('DamageReduction')?.value || '',
+    ArmorValue             : document.getElementById('ArmorValue')?.value || '',
+    TD                     : document.getElementById('TD')?.value || '',
+    D                      : document.getElementById('D')?.value || '',
+    BodyTypeValue          : document.getElementById('BodyTypeValue')?.value || '',
+    BodyTypeUnit           : document.getElementById('BodyTypeUnit')?.value || '',
+    StompAoE               : document.getElementById('StompAoE')?.value || '',
+    NonTitanDeath          : document.getElementById('NonTitanDeath')?.value || '',
+    ActionAdvantage        : document.getElementById('ActionAdvantage')?.value || '',
+    Zusatz                 : document.getElementById('Zusatz')?.value || '',
+    BasicSkills            : document.getElementById('BasicSkills')?.value || '',
+    EthnicGroup            : document.getElementById('EthnicGroup')?.value || '',
+    Priesthood             : document.getElementById('Priesthood')?.value || '',
+    Divinity               : document.getElementById('Divinity')?.value || '',
+    Position               : document.getElementById('Position')?.value || '',
+    Hatred                 : document.getElementById('Hatred')?.value || '',
+    Immune                 : document.getElementById('Immune')?.value || '',
+    KillDev                : document.getElementById('KillDev')?.value || '',
+    SpecialDamage          : document.getElementById('SpecialDamage')?.value || ''
+  };
+  Object.assign(titanData[sec][idx],fields);
+  saveData();
+  showDirectory();
+}
+function saveGlobal(){globalData=document.getElementById('global-editor').value;saveData();alert('已保存');}
+function searchTitans(k){
+  document.querySelectorAll('.item span').forEach(sp=>{
+    sp.parentElement.style.display=sp.textContent.toLowerCase().includes(k.toLowerCase())?'flex':'none';
+  });
+}
+init();
+</script>
+
+</body>
+</html>
